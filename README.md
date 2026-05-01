@@ -7,7 +7,18 @@ Built on top of [`keith/reminders-cli`](https://github.com/keith/reminders-cli),
 which talks to **EventKit** directly — so iCloud-synced lists work out of the
 box, no AppleScript timeouts, no stubbed-out responses.
 
-## Why?
+## Motivation
+
+I wanted to manage tasks and TODOs from Claude Cowork using Apple Reminders,
+since Reminders is tightly integrated with macOS and already part of my
+workflow. I tried [`dhravya/apple-mcp`](https://github.com/dhravya/apple-mcp)
+— the only existing MCP I came across — but its Reminders support didn't
+actually work for me (see *Why not* below). Claude proposed wrapping
+[`keith/reminders-cli`](https://github.com/keith/reminders-cli) with a thin
+MCP shim instead, and built this. There may be other solutions out there;
+this is the one Claude built for me. Feel free to use it.
+
+## Why not `apple-mcp`?
 
 [`dhravya/apple-mcp`](https://github.com/dhravya/apple-mcp) v1.0.0 has its
 Reminders fetching effectively stubbed out — `getAllReminders` returns `[]`
