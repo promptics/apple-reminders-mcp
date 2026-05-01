@@ -11,12 +11,15 @@ box, no AppleScript timeouts, no stubbed-out responses.
 
 I wanted to manage tasks and TODOs from Claude Cowork using Apple Reminders,
 since Reminders is tightly integrated with macOS and already part of my
-workflow. I tried [`dhravya/apple-mcp`](https://github.com/dhravya/apple-mcp)
-— the only existing MCP I came across — but its Reminders support didn't
-actually work for me (see *Why not* below). Claude proposed wrapping
-[`keith/reminders-cli`](https://github.com/keith/reminders-cli) with a thin
-MCP shim instead, and built this. There may be other solutions out there;
-this is the one Claude built for me. Feel free to use it.
+workflow. Claude first proposed
+[`dhravya/apple-mcp`](https://github.com/dhravya/apple-mcp); it didn't
+actually work for me (see *Why not* below). Rather than search and test
+alternatives myself — that's the kind of thing I'd want Claude to do — I had
+Claude wrap [`keith/reminders-cli`](https://github.com/keith/reminders-cli)
+with a thin MCP shim instead. That's what this is.
+
+There are probably other solutions out there. This is the one Claude built
+for me. Use it if you want, or build your own — whichever suits you.
 
 ## Why not `apple-mcp`?
 
