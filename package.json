@@ -1,0 +1,49 @@
+{
+  "name": "apple-reminders-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for Apple Reminders, wrapping keith/reminders-cli (EventKit-based, sees iCloud lists).",
+  "type": "module",
+  "main": "index.ts",
+  "bin": {
+    "apple-reminders-mcp": "./index.ts"
+  },
+  "scripts": {
+    "start": "bun run index.ts",
+    "smoke": "bun run scripts/smoke.ts"
+  },
+  "files": [
+    "index.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "apple",
+    "reminders",
+    "ios",
+    "macos",
+    "eventkit",
+    "claude",
+    "anthropic"
+  ],
+  "homepage": "https://github.com/promptics/apple-reminders-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/promptics/apple-reminders-mcp/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/promptics/apple-reminders-mcp.git"
+  },
+  "author": "Fabian Krüger (https://github.com/promptics)",
+  "license": "MIT",
+  "engines": {
+    "bun": ">=1.0.0"
+  },
+  "os": [
+    "darwin"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  }
+}
