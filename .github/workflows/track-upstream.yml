@@ -1,0 +1,95 @@
+name: Track upstream reminders-cli releases
+
+# Polls keith/reminders-cli for new releases and opens a tracking issue here
+# when one ships. The auto-commit of .github/upstream-tag.txt keeps the
+# workflow idempotent — exactly one tracking issue per upstream release.
+
+on:
+  schedule:
+    - cron: "0 9 * * MON" # Mondays 09:00 UTC
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: write
+
+jobs:
+  check-upstream:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get latest upstream release
+        id: upstream
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          latest=$(gh release view --repo keith/reminders-cli --json tagName,name,body,url -q .)
+          tag=$(jq -r .tagName <<<"$latest")
+          name=$(jq -r .name <<<"$latest")
+          url=$(jq -r .url <<<"$latest")
+          jq -r .body <<<"$latest" > /tmp/release-body.md
+
+          {
+            echo "tag=$tag"
+            echo "name=$name"
+            echo "url=$url"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Read previously tracked tag
+        id: tracked
+        run: |
+          if [ -f .github/upstream-tag.txt ]; then
+            tag=$(tr -d '[:space:]' < .github/upstream-tag.txt)
+          else
+            tag=""
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Open tracking issue (only on tag change)
+        if: steps.upstream.outputs.tag != steps.tracked.outputs.tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEW_TAG: ${{ steps.upstream.outputs.tag }}
+          OLD_TAG: ${{ steps.tracked.outputs.tag }}
+          REL_NAME: ${{ steps.upstream.outputs.name }}
+          REL_URL: ${{ steps.upstream.outputs.url }}
+        run: |
+          {
+            echo "New \`keith/reminders-cli\` release detected."
+            echo
+            echo "- **Tag:** \`$NEW_TAG\` (\"$REL_NAME\")"
+            echo "- **Previously tracked:** \`${OLD_TAG:-<none>}\`"
+            echo "- **Release:** $REL_URL"
+            echo
+            echo "## Release notes"
+            echo
+            cat /tmp/release-body.md
+            echo
+            echo "## What to check"
+            echo
+            echo "- [ ] \`brew upgrade reminders-cli\` locally"
+            echo "- [ ] Run \`reminders --help\` and \`reminders help <subcommand>\` against the new version"
+            echo "- [ ] Diff options against the MCP's tool schemas in \`index.ts\`"
+            echo "- [ ] File enhancement issues for any new CLI options worth exposing"
+            echo "- [ ] Run \`bun run scripts/smoke.ts\` to confirm nothing regressed"
+            echo "- [ ] Close this issue once audited"
+          } > /tmp/issue-body.md
+
+          gh issue create \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Audit upstream reminders-cli $NEW_TAG" \
+            --label "upstream-tracking" \
+            --body-file /tmp/issue-body.md
+
+      - name: Update tracked tag
+        if: steps.upstream.outputs.tag != steps.tracked.outputs.tag
+        env:
+          NEW_TAG: ${{ steps.upstream.outputs.tag }}
+        run: |
+          echo "$NEW_TAG" > .github/upstream-tag.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/upstream-tag.txt
+          git commit -m "chore: bump tracked upstream reminders-cli to $NEW_TAG"
+          git push
