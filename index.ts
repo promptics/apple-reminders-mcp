@@ -177,11 +177,19 @@ const tools = [
   },
   {
     name: "new_list",
-    description: "Create a new reminder list.",
+    description:
+      "Create a new reminder list. Optionally specify the Reminders source (account) — typical values are 'iCloud' or 'On My Mac'. If omitted, the CLI uses the only source when there's one and errors when multiple sources exist.",
     inputSchema: {
       type: "object",
       required: ["name"],
-      properties: { name: { type: "string" } },
+      properties: {
+        name: { type: "string", description: "Name of the new list." },
+        source: {
+          type: "string",
+          description:
+            "Reminders source/account name (e.g. 'iCloud', 'On My Mac'). Required only when multiple sources exist.",
+        },
+      },
       additionalProperties: false,
     },
   },
@@ -287,9 +295,14 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
         };
       }
       case "new_list": {
-        await rcli(["new-list", a.name]);
+        const args = ["new-list", a.name];
+        if (a.source !== undefined) args.push("--source", a.source);
+        await rcli(args);
+        const detail = a.source ? ` (source=${a.source})` : "";
         return {
-          content: [{ type: "text", text: `created list: ${a.name}` }],
+          content: [
+            { type: "text", text: `created list: ${a.name}${detail}` },
+          ],
         };
       }
       default:

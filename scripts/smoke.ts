@@ -122,9 +122,24 @@ async function main() {
     log("initialize", !!init.result, JSON.stringify((init.result as any)?.serverInfo));
     c.notify("notifications/initialized");
 
-    // 1. tools/list
+    // 1. tools/list — count + key schema regression checks
     const tl = (await c.request("tools/list")).result as any;
-    log("tools/list", Array.isArray(tl?.tools) && tl.tools.length === 9, `${tl?.tools?.length} tools`);
+    const toolList = tl?.tools as any[];
+    log("tools/list", Array.isArray(toolList) && toolList.length === 9, `${toolList?.length} tools`);
+
+    const editTool = toolList?.find((t) => t.name === "edit");
+    log(
+      "edit schema includes notes",
+      !!editTool?.inputSchema?.properties?.notes,
+      Object.keys(editTool?.inputSchema?.properties ?? {}).join(","),
+    );
+
+    const newListTool = toolList?.find((t) => t.name === "new_list");
+    log(
+      "new_list schema includes source",
+      !!newListTool?.inputSchema?.properties?.source,
+      Object.keys(newListTool?.inputSchema?.properties ?? {}).join(","),
+    );
 
     // 2. list_lists — must include TEST_LIST
     const lists = JSON.parse(extractText(await c.call("list_lists"))) as string[];
