@@ -79,6 +79,12 @@ class Client {
   async call(name: string, args: Record<string, unknown> = {}): Promise<unknown> {
     const r = await this.request("tools/call", { name, arguments: args });
     if (r.error) throw new Error(`${name} error: ${r.error.message}`);
+    // biome-ignore lint/suspicious/noExplicitAny: MCP result shape.
+    const res = r.result as any;
+    if (res?.isError) {
+      const msg = res.content?.[0]?.text ?? "tool returned isError";
+      throw new Error(`${name}: ${msg}`);
+    }
     return r.result;
   }
 
@@ -151,11 +157,56 @@ async function main() {
     const foundAll = allItems.find((r) => r.externalId === externalId);
     log("show_all", !!foundAll, `total=${allItems.length}`);
 
-    // 6. edit
+    // 6a. edit (title only)
     await c.call("edit", { list: TEST_LIST, index: externalId, title: RENAMED });
-    const afterEdit = JSON.parse(extractText(await c.call("show", { list: TEST_LIST }))) as any[];
-    const renamed = afterEdit.find((r) => r.externalId === externalId);
-    log("edit", renamed?.title === RENAMED, renamed?.title);
+    let cur = JSON.parse(extractText(await c.call("show", { list: TEST_LIST }))) as any[];
+    let r = cur.find((x) => x.externalId === externalId);
+    log("edit (title only)", r?.title === RENAMED, r?.title);
+
+    // 6b. edit (notes only) — must replace notes without disturbing title
+    const REPLACED_NOTES = "smoke-notes-replaced";
+    await c.call("edit", {
+      list: TEST_LIST,
+      index: externalId,
+      notes: REPLACED_NOTES,
+    });
+    cur = JSON.parse(extractText(await c.call("show", { list: TEST_LIST }))) as any[];
+    r = cur.find((x) => x.externalId === externalId);
+    log(
+      "edit (notes only)",
+      r?.notes === REPLACED_NOTES && r?.title === RENAMED,
+      `title=${r?.title} notes=${r?.notes}`,
+    );
+
+    // 6c. edit (title + notes simultaneously)
+    const FINAL_TITLE = SENTINEL + "_final";
+    const FINAL_NOTES = "smoke-notes-final";
+    await c.call("edit", {
+      list: TEST_LIST,
+      index: externalId,
+      title: FINAL_TITLE,
+      notes: FINAL_NOTES,
+    });
+    cur = JSON.parse(extractText(await c.call("show", { list: TEST_LIST }))) as any[];
+    r = cur.find((x) => x.externalId === externalId);
+    log(
+      "edit (both)",
+      r?.title === FINAL_TITLE && r?.notes === FINAL_NOTES,
+      `title=${r?.title} notes=${r?.notes}`,
+    );
+
+    // 6d. edit with neither title nor notes — must reject
+    let rejected = false;
+    try {
+      await c.call("edit", { list: TEST_LIST, index: externalId });
+    } catch {
+      rejected = true;
+    }
+    log(
+      "edit (no fields rejected)",
+      rejected,
+      rejected ? "rejected as expected" : "WRONGLY ACCEPTED",
+    );
 
     // 7. complete
     await c.call("complete", { list: TEST_LIST, index: externalId });

@@ -13,7 +13,7 @@
 //   complete   <list> <index|id>
 //   uncomplete <list> <index|id>
 //   delete     <list> <index|id>
-//   edit       <list> <index|id> <title>
+//   edit       <list> <index|id> [title] [notes]
 //   new_list   <name>
 //
 // Index/id: pass the externalId from a `show` result for stable references
@@ -156,15 +156,22 @@ const tools = [
   },
   {
     name: "edit",
-    description: "Change the title of a reminder.",
+    description:
+      "Edit a reminder's title and/or notes. Pass either or both — at least one is required. Note: passing `notes` overwrites the previous notes (CLI semantics).",
     inputSchema: {
       type: "object",
-      required: ["list", "index", "title"],
+      required: ["list", "index"],
       properties: {
         list: { type: "string" },
-        index: { type: "string" },
-        title: { type: "string" },
+        index: { type: "string", description: "externalId or numeric index" },
+        title: { type: "string", description: "New title. Optional." },
+        notes: {
+          type: "string",
+          description:
+            "New notes body. Overwrites existing notes. Optional.",
+        },
       },
+      anyOf: [{ required: ["title"] }, { required: ["notes"] }],
       additionalProperties: false,
     },
   },
@@ -259,12 +266,22 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
         };
       }
       case "edit": {
-        await rcli(["edit", a.list, String(a.index), a.title]);
+        if (a.title === undefined && a.notes === undefined) {
+          throw new Error("edit requires at least one of: title, notes");
+        }
+        const args = ["edit", a.list, String(a.index)];
+        if (a.notes !== undefined) args.push("--notes", a.notes);
+        if (a.title !== undefined) args.push(a.title);
+        await rcli(args);
+        const changed: string[] = [];
+        if (a.title !== undefined) changed.push(`title="${a.title}"`);
+        if (a.notes !== undefined)
+          changed.push(`notes (${a.notes.length} chars)`);
         return {
           content: [
             {
               type: "text",
-              text: `edited ${a.list} #${a.index} -> ${a.title}`,
+              text: `edited ${a.list} #${a.index} -> ${changed.join(", ")}`,
             },
           ],
         };

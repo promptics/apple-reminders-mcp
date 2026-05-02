@@ -39,7 +39,7 @@ sidesteps the problem entirely by delegating to a maintained Swift binary.
 | `complete`    | Mark complete by `externalId` (preferred) or numeric index |
 | `uncomplete`  | Unmark complete                                            |
 | `delete`      | Delete                                                     |
-| `edit`        | Change title                                               |
+| `edit`        | Change title and/or notes (notes overwrite previous)       |
 | `new_list`    | Create a list                                              |
 
 `show` returns objects shaped like:
@@ -155,7 +155,6 @@ End-to-end (calls the real CLI, requires Reminders permission):
 - [ ] Publish to npm so `bunx apple-reminders-mcp@latest` resolves
 - [ ] CI on GitHub Actions (lint + smoke test on macOS runners)
 - [ ] Optional `priority` typing once `reminders-cli` documents accepted values
-- [ ] Consider exposing reminder `notes` editing (currently CLI-side only)
 
 ## Contributing
 
